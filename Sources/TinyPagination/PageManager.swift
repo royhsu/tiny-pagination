@@ -22,15 +22,18 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
     /// Indicate whether the next page exists.
     public var containsNextPage: Bool { nextPageCursor != nil }
     
+    /// Indicate whether the manager is fetching.
     public private(set) var isFetching = false
     
+    /// Make sure to check if the `isFetching` was false before performing any new fetch request.
+    /// By passing a new start page fetch request , the manager will reset the previous and next page states.
+    ///
+    /// - Note: Performing a previous / next page fetch request without a start page fetch request will result a crash.
     public func fetch(
         _ page: Page,
         completion: @escaping (Result<[Element], Failure>) -> Void
     ) {
         
-        precondition(!isFetching)
-    
         let interpolation: (FetchResult<Element, Failure>) -> Void = { result in
             
             do {
@@ -65,6 +68,8 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
             catch { completion(.failure(error as! Failure)) }
             
         }
+
+        precondition(!isFetching)
         
         isFetching = true
         
