@@ -22,10 +22,14 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
     /// Indicate whether the next page exists.
     public var containsNextPage: Bool { nextPageCursor != nil }
     
+    public private(set) var isFetching = false
+    
     public func fetch(
         _ page: Page,
         completion: @escaping (Result<[Element], Failure>) -> Void
     ) {
+        
+        precondition(!isFetching)
     
         let interpolation: (FetchResult<Element, Failure>) -> Void = { result in
             
@@ -51,12 +55,18 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
                     
                 }
                 
+                precondition(self.isFetching)
+                
+                self.isFetching = false
+                
                 completion(.success(elements))
                 
             }
             catch { completion(.failure(error as! Failure)) }
             
         }
+        
+        isFetching = true
         
         switch page {
             

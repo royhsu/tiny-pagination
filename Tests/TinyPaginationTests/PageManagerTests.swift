@@ -31,6 +31,8 @@ final class PageManagerTests: XCTestCase {
     
     func testInitialize() {
         
+        XCTAssertFalse(manager!.isFetching)
+        
         XCTAssertFalse(manager!.containsPreviousPage)
         
         XCTAssertFalse(manager!.containsNextPage)
@@ -45,10 +47,14 @@ final class PageManagerTests: XCTestCase {
         
         let didFetchNextPage = expectation(description: "Did fetch the next page.")
         
+        XCTAssertFalse(manager!.isFetching)
+        
         manager!.fetch(
             .start(FetchRequest(fetchCursor: TableCursor(offset: 1, limit: 2))),
             completion: { result in
-            
+                
+                XCTAssertFalse(self.manager!.isFetching)
+                
                 do {
                     
                     let rows = try result.get()
@@ -74,6 +80,8 @@ final class PageManagerTests: XCTestCase {
                     didFetchStartPage.fulfill()
                     
                     self.manager!.fetch(.previous) { result in
+                        
+                        XCTAssertFalse(self.manager!.isFetching)
 
                         do {
                             
@@ -97,6 +105,8 @@ final class PageManagerTests: XCTestCase {
 
                             self.manager!.fetch(.next) { result in
 
+                                XCTAssertFalse(self.manager!.isFetching)
+                                
                                 do {
                                 
                                     let rows = try result.get()
@@ -122,16 +132,22 @@ final class PageManagerTests: XCTestCase {
 
                             }
                             
+                            XCTAssert(self.manager!.isFetching)
+                            
                         }
                         catch { XCTFail("\(error)") }
 
                     }
+                    
+                    XCTAssert(self.manager!.isFetching)
                     
                 }
                 catch { XCTFail("\(error)") }
             
             }
         )
+        
+        XCTAssert(manager!.isFetching)
         
         waitForExpectations(timeout: 10.0)
         
