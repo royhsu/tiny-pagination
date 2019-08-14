@@ -6,7 +6,7 @@ public struct AnyFetchableService<Element, Failure> where Element: Fetchable, Fa
         _ request: FetchRequest<Element>,
         _ completion: @escaping (FetchResult<Element, Failure>) -> Void
     )
-    -> Void
+    -> FetchTask
     
     public init<S>(_ service: S)
     where
@@ -23,6 +23,7 @@ extension AnyFetchableService: FetchableService {
     public func fetch(
         _ request: FetchRequest<Element>,
         completion: @escaping (FetchResult<Element, Failure>) -> Void
-    ) { _fetch(request, completion) }
+    )
+    -> FetchTask { _fetch(request, completion) }
     
 }

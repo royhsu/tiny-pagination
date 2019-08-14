@@ -31,10 +31,12 @@ extension Table: Equatable where Content: Equatable { }
 
 extension Table: FetchableService {
     
+    @discardableResult
     func fetch(
         _ request: FetchRequest<TableRow<Content>>,
         completion: @escaping (FetchResult<TableRow<Content>, Error>) -> Void
-    ) {
+    )
+    -> FetchTask {
         
         DispatchQueue.global().async {
             
@@ -101,6 +103,20 @@ extension Table: FetchableService {
             completion(.success((fetchRows, previousCursor, nextCursor)))
             
         }
+        
+        return QueryTask()
+        
+    }
+    
+}
+
+// MARK: - Task
+
+extension Table {
+    
+    private final class QueryTask: FetchTask {
+        
+        func cancel() { }
         
     }
     

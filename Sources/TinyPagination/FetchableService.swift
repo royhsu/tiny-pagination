@@ -10,5 +10,6 @@ public protocol FetchableService {
         _ request: FetchRequest<Element>,
         completion: @escaping (FetchResult<Element, Failure>) -> Void
     )
+    -> FetchTask
     
 }

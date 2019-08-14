@@ -68,7 +68,7 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
             
             startPageFetchRequest = fetchRequest
             
-            service.fetch(fetchRequest, completion: interpolation)
+            _ = service.fetch(fetchRequest, completion: interpolation)
             
         case .previous:
         
@@ -76,7 +76,7 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
             
             guard let previousPageCursor = previousPageCursor else { preconditionFailure("No previous page.") }
             
-            service.fetch(
+            _ = service.fetch(
                 FetchRequest(fetchCursor: previousPageCursor),
                 completion: interpolation
             )
@@ -87,7 +87,7 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
             
             guard let nextPageCursor = nextPageCursor else { preconditionFailure("No next page.") }
             
-            service.fetch(
+            _ = service.fetch(
                 FetchRequest(fetchCursor: nextPageCursor),
                 completion: interpolation
             )
