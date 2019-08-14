@@ -1,13 +1,14 @@
 // MARK: - PageManager
 
-public final class PageManager<Element> where Element: Fetchable {
+public final class PageManager<Element, Failure> where Element: Fetchable, Failure: Error {
 
-    private let service: AnyFetchableService<Element>
+    private let service: AnyFetchableService<Element, Failure>
     
     public init<S>(service: S)
     where
         S: FetchableService,
-        S.Element == Element { self.service = AnyFetchableService(service) }
+        S.Element == Element,
+        S.Failure == Failure { self.service = AnyFetchableService(service) }
 
     private var startPageFetchRequest: FetchRequest<Element>?
 
@@ -23,10 +24,10 @@ public final class PageManager<Element> where Element: Fetchable {
     
     public func fetch(
         _ page: Page,
-        completion: @escaping (Result<[Element], Error>) -> Void
+        completion: @escaping (Result<[Element], Failure>) -> Void
     ) {
     
-        let interpolation: (FetchResult<Element, Error>) -> Void = { result in
+        let interpolation: (FetchResult<Element, Failure>) -> Void = { result in
             
             do {
                 
@@ -53,7 +54,7 @@ public final class PageManager<Element> where Element: Fetchable {
                 completion(.success(elements))
                 
             }
-            catch { completion(.failure(error)) }
+            catch { completion(.failure(error as! Failure)) }
             
         }
         

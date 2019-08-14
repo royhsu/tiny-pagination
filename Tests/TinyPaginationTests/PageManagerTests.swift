@@ -6,7 +6,7 @@ import XCTest
 
 final class PageManagerTests: XCTestCase {
     
-    var manager: PageManager<TableRow<Message>>?
+    var manager: PageManager<TableRow<Message>, Error>?
     
     override func setUp() {
         
