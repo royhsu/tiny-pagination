@@ -7,7 +7,7 @@ struct Table<Content> {
     
     private var rows: [TableRow<Content>]
     
-    init(contents: [Content]) {
+    init(contents: [Content] = []) {
         
         self.rows = zip(contents.indices, contents)
             .map { index, content in

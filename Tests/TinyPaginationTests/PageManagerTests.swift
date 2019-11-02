@@ -6,36 +6,15 @@ import XCTest
 
 final class PageManagerTests: XCTestCase {
     
-    var manager: PageManager<TableRow<Message>, Error>?
-    
-    override func setUp() {
-        
-        super.setUp()
-        
-        manager = PageManager(
-            service: Table<Message>(
-                contents: (0...3)
-                    .map { Message(text: "\($0)") }
-            )
-        )
-        
-    }
-    
-    override func tearDown() {
-        
-        manager = nil
-        
-        super.tearDown()
-        
-    }
-    
     func testInitialize() {
+    
+        let manager = PageManager(service: Table<Message>())
         
-        XCTAssertFalse(manager!.isFetching)
+        XCTAssertFalse(manager.isFetching)
         
-        XCTAssertFalse(manager!.containsPreviousPage)
+        XCTAssertFalse(manager.containsPreviousPage)
         
-        XCTAssertFalse(manager!.containsNextPage)
+        XCTAssertFalse(manager.containsNextPage)
         
     }
     
@@ -47,13 +26,20 @@ final class PageManagerTests: XCTestCase {
         
         let didFetchNextPage = expectation(description: "Did fetch the next page.")
         
-        XCTAssertFalse(manager!.isFetching)
+        let manager = PageManager(
+            service: Table<Message>(
+                contents: (0...3)
+                    .map { Message(text: "\($0)") }
+            )
+        )
         
-        manager!.fetch(
+        XCTAssertFalse(manager.isFetching)
+        
+        manager.fetch(
             .start(FetchRequest(fetchCursor: TableCursor(offset: 1, limit: 2))),
             completion: { result in
                 
-                XCTAssertFalse(self.manager!.isFetching)
+                XCTAssertFalse(manager.isFetching)
                 
                 do {
                     
@@ -73,15 +59,15 @@ final class PageManagerTests: XCTestCase {
                         ]
                     )
                     
-                    XCTAssert(self.manager!.containsPreviousPage)
+                    XCTAssert(manager.containsPreviousPage)
                     
-                    XCTAssert(self.manager!.containsNextPage)
+                    XCTAssert(manager.containsNextPage)
                     
                     didFetchStartPage.fulfill()
                     
-                    self.manager!.fetch(.previous) { result in
+                    manager.fetch(.previous) { result in
                         
-                        XCTAssertFalse(self.manager!.isFetching)
+                        XCTAssertFalse(manager.isFetching)
 
                         do {
                             
@@ -91,21 +77,24 @@ final class PageManagerTests: XCTestCase {
                                 rows,
                                 [
                                     TableRow(
-                                        cursor: TableCursor(offset: 0, limit: 1),
+                                        cursor: TableCursor(
+                                            offset: 0,
+                                            limit: 1
+                                        ),
                                         content: Message(text: "0")
                                     ),
                                 ]
                             )
 
-                            XCTAssertFalse(self.manager!.containsPreviousPage)
+                            XCTAssertFalse(manager.containsPreviousPage)
 
-                            XCTAssert(self.manager!.containsNextPage)
+                            XCTAssert(manager.containsNextPage)
 
                             didFetchPreviousPage.fulfill()
 
-                            self.manager!.fetch(.next) { result in
+                            manager.fetch(.next) { result in
 
-                                XCTAssertFalse(self.manager!.isFetching)
+                                XCTAssertFalse(manager.isFetching)
                                 
                                 do {
                                 
@@ -115,15 +104,18 @@ final class PageManagerTests: XCTestCase {
                                         rows,
                                         [
                                             TableRow(
-                                                cursor: TableCursor(offset: 3, limit: 1),
+                                                cursor: TableCursor(
+                                                    offset: 3,
+                                                    limit: 1
+                                                ),
                                                 content: Message(text: "3")
                                             ),
                                         ]
                                     )
 
-                                    XCTAssertFalse(self.manager!.containsPreviousPage)
+                                    XCTAssertFalse(manager.containsPreviousPage)
 
-                                    XCTAssertFalse(self.manager!.containsNextPage)
+                                    XCTAssertFalse(manager.containsNextPage)
 
                                     didFetchNextPage.fulfill()
                                     
@@ -132,14 +124,14 @@ final class PageManagerTests: XCTestCase {
 
                             }
                             
-                            XCTAssert(self.manager!.isFetching)
+                            XCTAssert(manager.isFetching)
                             
                         }
                         catch { XCTFail("\(error)") }
 
                     }
                     
-                    XCTAssert(self.manager!.isFetching)
+                    XCTAssert(manager.isFetching)
                     
                 }
                 catch { XCTFail("\(error)") }
@@ -147,11 +139,15 @@ final class PageManagerTests: XCTestCase {
             }
         )
         
-        XCTAssert(manager!.isFetching)
+        XCTAssert(manager.isFetching)
         
         waitForExpectations(timeout: 10.0)
         
     }
+    
+}
+
+extension PageManagerTests {
     
     static var allTests = [
         ("testInitialize", testInitialize),
