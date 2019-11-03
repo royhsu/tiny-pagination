@@ -4,9 +4,17 @@ import PackageDescription
 
 let package = Package(
     name: "TinyPagination",
-    products: [ .library(name: "TinyPagination", targets: ["TinyPagination"]), ],
+    products: [
+        .library(
+            name: "TinyPagination",
+            targets: [ "TinyPagination", ]
+        ),
+    ],
     targets: [
         .target(name: "TinyPagination"),
-        .testTarget(name: "TinyPaginationTests", dependencies: ["TinyPagination"]),
+        .testTarget(
+            name: "TinyPaginationTests",
+            dependencies: [ "TinyPagination", ]
+        ),
     ]
 )
