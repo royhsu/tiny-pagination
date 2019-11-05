@@ -1,6 +1,9 @@
 // MARK: - PageManager
 
-public final class PageManager<Element, Failure> where Element: Fetchable, Failure: Error {
+public final class PageManager<Element, Failure>
+where
+    Element: Fetchable,
+    Failure: Error {
 
     private let service: AnyFetchableService<Element, Failure>
     
@@ -36,6 +39,8 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
         
         let interpolation: (FetchResult<Element, Failure>) -> Void = { result in
             
+            precondition(self.isFetching)
+            
             do {
                 
                 let (elements, previousCursor, nextCursor) = try result.get()
@@ -48,24 +53,25 @@ public final class PageManager<Element, Failure> where Element: Fetchable, Failu
                     
                     self.nextPageCursor = nextCursor
                     
-                case .previous:
+                case .previous: self.previousPageCursor = previousCursor
                     
-                    self.previousPageCursor = previousCursor
-                    
-                case .next:
-                    
-                    self.nextPageCursor = nextCursor
+                case .next: self.nextPageCursor = nextCursor
                     
                 }
-                
-                precondition(self.isFetching)
                 
                 self.isFetching = false
                 
                 completion(.success(elements))
                 
             }
-            catch { completion(.failure(error as! Failure)) }
+            catch {
+                
+                #warning("TODO: [Priority: high] missing a test.")
+                self.isFetching = false
+                
+                completion(.failure(error as! Failure))
+                
+            }
             
         }
 
