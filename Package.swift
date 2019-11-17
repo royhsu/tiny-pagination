@@ -10,8 +10,14 @@ let package = Package(
             targets: [ "TinyPagination", ]
         ),
     ],
+    dependencies: [
+        .package(path: "../tiny-combine"),
+    ],
     targets: [
-        .target(name: "TinyPagination"),
+        .target(
+            name: "TinyPagination",
+            dependencies: [ "TinyCombine", ]
+        ),
         .testTarget(
             name: "TinyPaginationTests",
             dependencies: [ "TinyPagination", ]
