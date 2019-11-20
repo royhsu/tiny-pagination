@@ -1,6 +1,7 @@
 // MARK: - Table
 
 import Foundation
+import TinyCombine
 import TinyPagination
 
 struct Table<Content> {
@@ -36,7 +37,7 @@ extension Table: FetchableService {
         _ request: FetchRequest<TableRow<Content>>,
         completion: @escaping (FetchResult<TableRow<Content>, Error>) -> Void
     )
-    -> FetchTask {
+    -> Cancellable {
         
         DispatchQueue.global().async {
             
@@ -114,7 +115,7 @@ extension Table: FetchableService {
 
 extension Table {
     
-    private final class QueryTask: FetchTask {
+    private final class QueryTask: Cancellable {
         
         func cancel() { }
         
