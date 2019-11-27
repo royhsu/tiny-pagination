@@ -19,16 +19,10 @@ where
 
     private var previousPageCursor: Element.Cursor?
     
-    @available(*, renamed: "hasPreviousPage")
-    public var containsPreviousPage: Bool { previousPageCursor != nil }
-    
     /// Indicate whether the previous page exists.
     public var hasPreviousPage: Bool { previousPageCursor != nil }
     
     private var nextPageCursor: Element.Cursor?
-    
-    @available(*, renamed: "hasNextPage")
-    public var containsNextPage: Bool { nextPageCursor != nil }
     
     /// Indicate whether the next page exists.
     public var hasNextPage: Bool { nextPageCursor != nil }
