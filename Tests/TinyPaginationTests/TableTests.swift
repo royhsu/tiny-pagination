@@ -220,6 +220,10 @@ final class TableTests: XCTestCase {
 
     }
     
+}
+
+extension TableTests {
+    
     static var allTests = [
         ("testFetchRowsWithZeroOffset", testFetchRowsWithZeroOffset),
         ("testFetchAllRowsAtOnce", testFetchAllRowsAtOnce),
