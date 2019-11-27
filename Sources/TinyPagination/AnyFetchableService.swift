@@ -1,8 +1,11 @@
 // MARK: - AnyFetchableService
 
-import TinyCombine
+import OpenCombine
 
-public struct AnyFetchableService<Element, Failure> where Element: Fetchable, Failure: Error {
+public struct AnyFetchableService<Element, Failure>
+where
+    Element: Fetchable,
+    Failure: Error {
     
     private let _fetch: (
         _ request: FetchRequest<Element>,

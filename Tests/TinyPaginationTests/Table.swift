@@ -1,7 +1,7 @@
 // MARK: - Table
 
 import Foundation
-import TinyCombine
+import OpenCombine
 import TinyPagination
 
 struct Table<Content> {

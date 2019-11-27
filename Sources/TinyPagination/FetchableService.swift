@@ -1,6 +1,6 @@
 // MARK: - FetchableService
 
-import TinyCombine
+import OpenCombine
 
 public protocol FetchableService {
     
