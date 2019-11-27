@@ -32,92 +32,105 @@ extension Table: Equatable where Content: Equatable { }
 
 extension Table: FetchableService {
     
-    @discardableResult
     func fetch(
-        _ request: FetchRequest<TableRow<Content>>,
-        completion: @escaping (FetchResult<TableRow<Content>, Error>) -> Void
+        _ request: FetchRequest<TableRow<Content>>
     )
-    -> Cancellable {
+    -> AnyPublisher<FetchResponse<TableRow<Content>>, Error> {
         
-        DispatchQueue.global().async {
+        Deferred {
             
-            let rowIndices = self.rows.indices
+            Future { promise in
             
-            let currentCursor: TableCursor
-            
-            let previousCursor: TableCursor?
-            
-            if let fetchCursor = request.fetchCursor {
-                
-                currentCursor = fetchCursor
-                
-                let expectingPreviousRange = (currentCursor.offset - currentCursor.limit)..<currentCursor.offset
-                
-                let validPreviousRange = rowIndices.clamped(to: expectingPreviousRange)
-                
-                previousCursor = (currentCursor.offset == 0)
-                    ? nil
-                    : TableCursor(offset: validPreviousRange.lowerBound, limit: validPreviousRange.count)
+                DispatchQueue.global(qos: .background).async {
+                    
+                    let rowIndices = self.rows.indices
+                    
+                    let currentPageCursor: TableCursor
+                    
+                    let previousPageCursor: TableCursor?
+                    
+                    if let fetchCursor = request.fetchCursor {
+                        
+                        currentPageCursor = fetchCursor
+                        
+                        let expectedPreviousRange = (currentPageCursor.offset - currentPageCursor.limit)..<currentPageCursor.offset
+                        
+                        let validPreviousRange = rowIndices.clamped(
+                            to: expectedPreviousRange
+                        )
+                        
+                        previousPageCursor = (currentPageCursor.offset == 0)
+                            ? nil
+                            : TableCursor(
+                                offset: validPreviousRange.lowerBound,
+                                limit: validPreviousRange.count
+                            )
+                        
+                    }
+                    else {
+                        
+                        currentPageCursor = TableCursor(offset: 0)
+                        
+                        previousPageCursor = nil
+                        
+                    }
+                    
+                    let currentStartOffset = currentPageCursor.offset
+                    
+                    guard rowIndices.contains(currentStartOffset) else {
+
+                        promise(
+                            .failure(FetchError.rowsNotFound(currentPageCursor))
+                        )
+
+                        return
+
+                    }
+                    
+                    let currentEndOffset = currentStartOffset + currentPageCursor.limit - 1
+                    
+                    let nextStartOffset = currentEndOffset + 1
+                    
+                    let containsNext = nextStartOffset < self.rows.count
+                    
+                    let nextCursor: TableCursor?
+                    
+                    if containsNext {
+                    
+                        let expectedNextRange = nextStartOffset..<(nextStartOffset + currentPageCursor.limit)
+                        
+                        let validNextRange = rowIndices.clamped(
+                            to: expectedNextRange
+                        )
+                        
+                        nextCursor = TableCursor(
+                            offset: validNextRange.lowerBound,
+                            limit: validNextRange.count
+                        )
+                        
+                    }
+                    else { nextCursor = nil }
+                    
+                    let fetchRange = (currentStartOffset..<nextStartOffset).clamped(to: rowIndices)
+                    
+                    let fetchRows = Array(self.rows[fetchRange])
+
+                    promise(
+                        .success(
+                            FetchResponse(
+                                elements: fetchRows,
+                                previousPageCursor: previousPageCursor,
+                                nextPageCursor: nextCursor
+                            )
+                        )
+                    )
+                    
+                }
                 
             }
-            else {
-                
-                currentCursor = TableCursor(offset: 0)
-                
-                previousCursor = nil
-                
-            }
-            
-            let currentStartOffset = currentCursor.offset
-            
-            guard rowIndices.contains(currentStartOffset) else {
-
-                completion(.failure(FetchError.notFound(currentCursor)))
-
-                return
-
-            }
-            
-            let currentEndOffset = currentStartOffset + currentCursor.limit - 1
-            
-            let nextStartOffset = currentEndOffset + 1
-            
-            let containsNext = nextStartOffset < self.rows.count
-            
-            let nextCursor: TableCursor?
-            
-            if containsNext {
-            
-                let expectingNextRange = nextStartOffset..<(nextStartOffset + currentCursor.limit)
-                
-                let validNextRange = rowIndices.clamped(to: expectingNextRange)
-                
-                nextCursor = TableCursor(offset: validNextRange.lowerBound, limit: validNextRange.count)
-                
-            }
-            else { nextCursor = nil }
-            
-            let fetchRange = (currentStartOffset..<nextStartOffset).clamped(to: rowIndices)
-            
-            let fetchRows = Array(self.rows[fetchRange])
-
-            completion(.success((fetchRows, previousCursor, nextCursor)))
             
         }
-        
-        return QueryTask()
-        
-    }
-    
-}
-
-// MARK: - Task
-
-extension Table {
-    
-    private final class QueryTask: Cancellable {
-        
-        func cancel() { }
+            .eraseToAnyPublisher()
         
     }
     
@@ -129,7 +142,8 @@ extension Table {
     
     enum FetchError: Error {
         
-        case notFound(TableCursor)
+        /// Cannot find rows for the given cursor.
+        case rowsNotFound(TableCursor)
         
     }
     

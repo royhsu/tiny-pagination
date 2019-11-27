@@ -8,10 +8,9 @@ where
     Failure: Error {
     
     private let _fetch: (
-        _ request: FetchRequest<Element>,
-        _ completion: @escaping (FetchResult<Element, Failure>) -> Void
+        FetchRequest<Element>
     )
-    -> Cancellable
+    -> AnyPublisher<FetchResponse<Element>, Failure>
     
     public init<S>(_ service: S)
     where
@@ -26,9 +25,8 @@ where
 extension AnyFetchableService: FetchableService {
     
     public func fetch(
-        _ request: FetchRequest<Element>,
-        completion: @escaping (FetchResult<Element, Failure>) -> Void
+        _ request: FetchRequest<Element>
     )
-    -> Cancellable { _fetch(request, completion) }
+    -> AnyPublisher<FetchResponse<Element>, Failure> { _fetch(request) }
     
 }

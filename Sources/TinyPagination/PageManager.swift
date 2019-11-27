@@ -1,5 +1,7 @@
 // MARK: - PageManager
 
+import OpenCombine
+
 public final class PageManager<Element, Failure>
 where
     Element: Fetchable,
@@ -17,16 +19,24 @@ where
 
     private var previousPageCursor: Element.Cursor?
     
-    /// Indicate whether the previous page exists.
+    @available(*, renamed: "hasPreviousPage")
     public var containsPreviousPage: Bool { previousPageCursor != nil }
+    
+    /// Indicate whether the previous page exists.
+    public var hasPreviousPage: Bool { previousPageCursor != nil }
     
     private var nextPageCursor: Element.Cursor?
     
-    /// Indicate whether the next page exists.
+    @available(*, renamed: "hasNextPage")
     public var containsNextPage: Bool { nextPageCursor != nil }
     
+    /// Indicate whether the next page exists.
+    public var hasNextPage: Bool { nextPageCursor != nil }
+    
     /// Indicate whether the manager is fetching.
-    public private(set) var isFetching = false
+    public var isFetching = false
+    
+    private var streams = Set<AnyCancellable>()
     
     /// Make sure to check if the `isFetching` was false before performing any new fetch request.
     /// By passing a new start page fetch request , the manager will reset the previous and next page states.
@@ -37,39 +47,39 @@ where
         completion: @escaping (Result<[Element], Failure>) -> Void
     ) {
         
-        let interpolation: (FetchResult<Element, Failure>) -> Void = { result in
-            
-            precondition(self.isFetching)
-            
-            do {
-                
-                let (elements, previousCursor, nextCursor) = try result.get()
+        var response: FetchResponse<Element>?
+        
+        func handleFetchCompletion(
+            _ fetchCompletion: Subscribers.Completion<Failure>
+        ) {
 
+            precondition(isFetching)
+
+            isFetching = false
+            
+            switch fetchCompletion {
+                
+            case .finished:
+                
+                let response = response ?? FetchResponse(elements: []) // A publisher might complete without any response.
+                
                 switch page {
                 
                 case .start:
                     
-                    self.previousPageCursor = previousCursor
+                    previousPageCursor = response.previousPageCursor
                     
-                    self.nextPageCursor = nextCursor
+                    nextPageCursor = response.nextPageCursor
                     
-                case .previous: self.previousPageCursor = previousCursor
+                case .previous: previousPageCursor = response.previousPageCursor
                     
-                case .next: self.nextPageCursor = nextCursor
+                case .next: nextPageCursor = response.nextPageCursor
                     
                 }
                 
-                self.isFetching = false
+                completion(.success(response.elements))
                 
-                completion(.success(elements))
-                
-            }
-            catch {
-                
-                #warning("TODO: [Priority: high] missing a test.")
-                self.isFetching = false
-                
-                completion(.failure(error as! Failure))
+            case let .failure(error): completion(.failure(error))
                 
             }
             
@@ -77,19 +87,25 @@ where
 
         precondition(!isFetching)
         
-        isFetching = true
-        
         switch page {
             
         case let .start(fetchRequest):
             
-            previousPageCursor = nil
+            reset()
             
-            nextPageCursor = nil
+            precondition(startPageFetchRequest == nil)
+            
+            isFetching = true
             
             startPageFetchRequest = fetchRequest
             
-            _ = service.fetch(fetchRequest, completion: interpolation)
+            service
+                .fetch(fetchRequest)
+                .sink(
+                    receiveCompletion: handleFetchCompletion,
+                    receiveValue: { response = $0 }
+                )
+                .store(in: &streams)
             
         case .previous:
         
@@ -105,10 +121,15 @@ where
                 
             }
             
-            _ = service.fetch(
-                FetchRequest(fetchCursor: previousPageCursor),
-                completion: interpolation
-            )
+            isFetching = true
+            
+            service
+                .fetch(FetchRequest(fetchCursor: previousPageCursor))
+                .sink(
+                    receiveCompletion: handleFetchCompletion,
+                    receiveValue: { response = $0 }
+                )
+                .store(in: &streams)
             
         case .next:
             
@@ -124,13 +145,32 @@ where
                 
             }
             
-            _ = service.fetch(
-                FetchRequest(fetchCursor: nextPageCursor),
-                completion: interpolation
-            )
+            isFetching = true
+            
+            service
+                .fetch(FetchRequest(fetchCursor: nextPageCursor))
+                .sink(
+                    receiveCompletion: handleFetchCompletion,
+                    receiveValue: { response = $0 }
+                )
+                .store(in: &streams)
             
         }
         
     }
 
+    private func reset() {
+        
+        streams = []
+        
+        isFetching = false
+        
+        startPageFetchRequest = nil
+        
+        previousPageCursor = nil
+        
+        nextPageCursor = nil
+        
+    }
+    
 }
