@@ -1,5 +1,6 @@
 // MARK: - PageManager
 
+import Foundation
 import OpenCombine
 
 public final class PageManager<Element, Failure>
@@ -9,12 +10,6 @@ where
 
     private let service: AnyFetchableService<Element, Failure>
     
-    public init<S>(service: S)
-    where
-        S: FetchableService,
-        S.Element == Element,
-        S.Failure == Failure { self.service = AnyFetchableService(service) }
-
     private var startPageFetchRequest: FetchRequest<Element>?
 
     private var previousPageCursor: Element.Cursor?
@@ -28,14 +23,22 @@ where
     public var hasNextPage: Bool { nextPageCursor != nil }
     
     /// Indicate whether the manager is fetching.
-    public var isFetching = false
-    
+    private(set) var isFetching = false
+
     private var streams = Set<AnyCancellable>()
     
-    /// Make sure to check if the `isFetching` was false before performing any new fetch request.
-    /// By passing a new start page fetch request , the manager will reset the previous and next page states.
+    public init<S>(service: S)
+    where
+        S: FetchableService,
+        S.Element == Element,
+        S.Failure == Failure { self.service = AnyFetchableService(service) }
+
+    /// Make sure to avoid multiple fetch requests at the same time. You can perform a new one at the
+    /// completion of the previous one.
+    /// By passing a new **.start** page fetch request , the manager will reset the previous and next page states.
     ///
-    /// - Note: Performing a previous / next page fetch request without a start page fetch request will result a crash.
+    /// - Note: Performing a **.previous /.next** page fetch request without a start page fetch request
+    /// will result a crash.
     public func fetch(
         _ page: Page<Element>,
         completion: @escaping (Result<[Element], Failure>) -> Void
@@ -55,7 +58,7 @@ where
                 
             case .finished:
                 
-                let response = response ?? FetchResponse(elements: []) // A publisher might complete without any response.
+                let response = response ?? FetchResponse(elements: []) // A publisher may complete without any response.
                 
                 switch page {
                 
@@ -90,9 +93,9 @@ where
             precondition(startPageFetchRequest == nil)
             
             isFetching = true
-            
+                
             startPageFetchRequest = fetchRequest
-            
+             
             service
                 .fetch(fetchRequest)
                 .sink(
@@ -102,7 +105,7 @@ where
                 .store(in: &streams)
             
         case .previous:
-        
+            
             if startPageFetchRequest == nil {
                 
                 preconditionFailure("No start fetch request.")
@@ -152,17 +155,17 @@ where
         }
         
     }
-
+    
     private func reset() {
         
         streams = []
         
         isFetching = false
-        
+            
         startPageFetchRequest = nil
-        
+            
         previousPageCursor = nil
-        
+            
         nextPageCursor = nil
         
     }
