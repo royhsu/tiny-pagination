@@ -1,6 +1,6 @@
 // MARK: - FetchableService
 
-import TinyCombine
+import OpenCombine
 
 public protocol FetchableService {
     
@@ -9,9 +9,8 @@ public protocol FetchableService {
     associatedtype Failure: Error
     
     func fetch(
-        _ request: FetchRequest<Element>,
-        completion: @escaping (FetchResult<Element, Failure>) -> Void
+        _ request: FetchRequest<Element>
     )
-    -> Cancellable
+    -> AnyPublisher<FetchResponse<Element>, Failure>
     
 }

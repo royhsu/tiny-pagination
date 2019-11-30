@@ -1,14 +1,16 @@
 // MARK: - AnyFetchableService
 
-import TinyCombine
+import OpenCombine
 
-public struct AnyFetchableService<Element, Failure> where Element: Fetchable, Failure: Error {
+public struct AnyFetchableService<Element, Failure>
+where
+    Element: Fetchable,
+    Failure: Error {
     
     private let _fetch: (
-        _ request: FetchRequest<Element>,
-        _ completion: @escaping (FetchResult<Element, Failure>) -> Void
+        FetchRequest<Element>
     )
-    -> Cancellable
+    -> AnyPublisher<FetchResponse<Element>, Failure>
     
     public init<S>(_ service: S)
     where
@@ -23,9 +25,8 @@ public struct AnyFetchableService<Element, Failure> where Element: Fetchable, Fa
 extension AnyFetchableService: FetchableService {
     
     public func fetch(
-        _ request: FetchRequest<Element>,
-        completion: @escaping (FetchResult<Element, Failure>) -> Void
+        _ request: FetchRequest<Element>
     )
-    -> Cancellable { _fetch(request, completion) }
+    -> AnyPublisher<FetchResponse<Element>, Failure> { _fetch(request) }
     
 }

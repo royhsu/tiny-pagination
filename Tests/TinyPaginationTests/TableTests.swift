@@ -30,30 +30,38 @@ final class TableTests: XCTestCase {
         
         let didFetchRows = expectation(description: "Did fetch rows.")
         
-        table!.fetch(FetchRequest(fetchCursor: TableCursor(offset: 0, limit: 1))) { result in
-            
-            do {
+        let stream = table!
+            .fetch(FetchRequest(fetchCursor: TableCursor(offset: 0, limit: 1)))
+            .sink(
+                receiveCompletion: { completion in
+                    
+                    switch completion {
+                     
+                    case .finished: break
+                    
+                    case let .failure(error): XCTFail("\(error)")
+                        
+                    }
+                    
+                },
+                receiveValue: { response in
                 
-                let (rows, previousCursor, _) = try result.get()
+                    defer { didFetchRows.fulfill() }
+        
+                    XCTAssertEqual(
+                        response.elements,
+                        [
+                            TableRow(
+                                cursor: TableCursor(offset: 0, limit: 1),
+                                content: Message(text: "0")
+                            ),
+                        ]
+                    )
+                    
+                    XCTAssertNil(response.previousPageCursor)
                 
-                XCTAssertEqual(
-                    rows,
-                    [
-                        TableRow(
-                            cursor: TableCursor(offset: 0, limit: 1),
-                            content: Message(text: "0")
-                        ),
-                    ]
-                )
-                
-                XCTAssertNil(previousCursor)
-                
-            }
-            catch { XCTFail("\(error)") }
-            
-            didFetchRows.fulfill()
-            
-        }
+                }
+            )
         
         waitForExpectations(timeout: 10.0)
         
@@ -63,52 +71,60 @@ final class TableTests: XCTestCase {
 
         let didFetchRows = expectation(description: "Did fetch rows.")
 
-        table!.fetch(FetchRequest()) { result in
-            
-            do {
-
-                let (rows, previousCursor, nextCursor) = try result.get()
-
-                XCTAssertEqual(
-                    rows,
-                    [
-                        TableRow(
-                            cursor: TableCursor(offset: 0, limit: 1),
-                            content: Message(text: "0")
-                        ),
-                        TableRow(
-                            cursor: TableCursor(offset: 1, limit: 1),
-                            content: Message(text: "1")
-                        ),
-                        TableRow(
-                            cursor: TableCursor(offset: 2, limit: 1),
-                            content: Message(text: "2")
-                        ),
-                        TableRow(
-                            cursor: TableCursor(offset: 3, limit: 1),
-                            content: Message(text: "3")
-                        ),
-                        TableRow(
-                            cursor: TableCursor(offset: 4, limit: 1),
-                            content: Message(text: "4")
-                        ),
-                        TableRow(
-                            cursor: TableCursor(offset: 5, limit: 1),
-                            content: Message(text: "5")
-                        ),
-                    ]
-                )
-
-                XCTAssertNil(previousCursor)
-
-                XCTAssertNil(nextCursor)
-
-                didFetchRows.fulfill()
+        let stream = table!
+            .fetch(FetchRequest())
+            .sink(
+                receiveCompletion: { completion in
+                    
+                    switch completion {
+                     
+                    case .finished: break
+                    
+                    case let .failure(error): XCTFail("\(error)")
+                        
+                    }
+                    
+                },
+                receiveValue: { response in
                 
-            }
-            catch { XCTFail("\(error)") }
+                    defer { didFetchRows.fulfill() }
+                    
+                    XCTAssertEqual(
+                        response.elements,
+                        [
+                            TableRow(
+                                cursor: TableCursor(offset: 0, limit: 1),
+                                content: Message(text: "0")
+                            ),
+                            TableRow(
+                                cursor: TableCursor(offset: 1, limit: 1),
+                                content: Message(text: "1")
+                            ),
+                            TableRow(
+                                cursor: TableCursor(offset: 2, limit: 1),
+                                content: Message(text: "2")
+                            ),
+                            TableRow(
+                                cursor: TableCursor(offset: 3, limit: 1),
+                                content: Message(text: "3")
+                            ),
+                            TableRow(
+                                cursor: TableCursor(offset: 4, limit: 1),
+                                content: Message(text: "4")
+                            ),
+                            TableRow(
+                                cursor: TableCursor(offset: 5, limit: 1),
+                                content: Message(text: "5")
+                            ),
+                        ]
+                    )
 
-        }
+                    XCTAssertNil(response.previousPageCursor)
+
+                    XCTAssertNil(response.nextPageCursor)
+                    
+                }
+            )
 
         waitForExpectations(timeout: 10.0)
 
@@ -118,16 +134,26 @@ final class TableTests: XCTestCase {
 
         let didFetchRows = expectation(description: "Did fetch rows.")
 
-        table!.fetch(
-            FetchRequest(fetchCursor: TableCursor(offset: 3, limit: 2)),
-            completion: { result in
+        let stream = table!
+            .fetch(FetchRequest(fetchCursor: TableCursor(offset: 3, limit: 2)))
+            .sink(
+                receiveCompletion: { completion in
+                    
+                    switch completion {
+                     
+                    case .finished: break
+                    
+                    case let .failure(error): XCTFail("\(error)")
+                        
+                    }
+                    
+                },
+                receiveValue: { response in
+                
+                    defer { didFetchRows.fulfill() }
 
-                do {
-                
-                    let (rows, previousCursor, nextCursor) = try result.get()
-                
                     XCTAssertEqual(
-                        rows,
+                        response.elements,
                         [
                             TableRow(
                                 cursor: TableCursor(offset: 3, limit: 1),
@@ -140,18 +166,19 @@ final class TableTests: XCTestCase {
                         ]
                     )
         
-                    XCTAssertEqual(previousCursor, TableCursor(offset: 1, limit: 2))
+                    XCTAssertEqual(
+                        response.previousPageCursor,
+                        TableCursor(offset: 1, limit: 2)
+                    )
         
-                    XCTAssertEqual(nextCursor, TableCursor(offset: 5, limit: 1))
-                    
+                    XCTAssertEqual(
+                        response.nextPageCursor,
+                        TableCursor(offset: 5, limit: 1)
+                    )
+                
                 }
-                catch { XCTFail("\(error)") }
-
-                didFetchRows.fulfill()
-
-            }
-        )
-        
+            )
+            
         waitForExpectations(timeout: 10.0)
 
     }
@@ -160,29 +187,42 @@ final class TableTests: XCTestCase {
 
         let didFail = expectation(description: "Did fail to fetch rows.")
 
-        table!.fetch(FetchRequest(fetchCursor: TableCursor(offset: -1))) { result in
+        let stream = table!
+            .fetch(FetchRequest(fetchCursor: TableCursor(offset: -1)))
+            .sink(
+                receiveCompletion: { completion in
+                    
+                    switch completion {
+                     
+                    case .finished: break
+                    
+                    case let .failure(error):
+            
+                        defer { didFail.fulfill() }
+            
+                        switch error {
+            
+                        case Table<Message>.FetchError.rowsNotFound(let cursor):
+                            
+                            XCTAssertEqual(cursor, TableCursor(offset: -1))
 
-            do {
-
-                _ = try result.get()
-
-                XCTFail()
-
-            }
-            catch Table<Message>.FetchError.notFound(let cursor) {
-
-                XCTAssertEqual(cursor, .init(offset: -1))
-
-            }
-            catch { XCTFail("Undefined error: \(error)") }
-
-            didFail.fulfill()
-
-        }
-
+                        default:  XCTFail("Undefined error: \(error)")
+            
+                        }
+                        
+                    }
+                    
+                },
+                receiveValue: { _ in XCTFail("Shouldn't receive reseponse.") }
+            )
+    
         waitForExpectations(timeout: 10.0)
 
     }
+    
+}
+
+extension TableTests {
     
     static var allTests = [
         ("testFetchRowsWithZeroOffset", testFetchRowsWithZeroOffset),

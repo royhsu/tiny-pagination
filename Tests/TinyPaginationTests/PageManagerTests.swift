@@ -12,9 +12,9 @@ final class PageManagerTests: XCTestCase {
         
         XCTAssertFalse(manager.isFetching)
         
-        XCTAssertFalse(manager.containsPreviousPage)
+        XCTAssertFalse(manager.hasPreviousPage)
         
-        XCTAssertFalse(manager.containsNextPage)
+        XCTAssertFalse(manager.hasNextPage)
         
     }
     
@@ -39,6 +39,8 @@ final class PageManagerTests: XCTestCase {
             .start(FetchRequest(fetchCursor: TableCursor(offset: 1, limit: 2))),
             completion: { result in
                 
+                defer { didFetchStartPage.fulfill() }
+                
                 XCTAssertFalse(manager.isFetching)
                 
                 do {
@@ -59,13 +61,13 @@ final class PageManagerTests: XCTestCase {
                         ]
                     )
                     
-                    XCTAssert(manager.containsPreviousPage)
+                    XCTAssert(manager.hasPreviousPage)
                     
-                    XCTAssert(manager.containsNextPage)
-                    
-                    didFetchStartPage.fulfill()
+                    XCTAssert(manager.hasNextPage)
                     
                     manager.fetch(.previous) { result in
+                        
+                        defer { didFetchPreviousPage.fulfill() }
                         
                         XCTAssertFalse(manager.isFetching)
 
@@ -86,14 +88,14 @@ final class PageManagerTests: XCTestCase {
                                 ]
                             )
 
-                            XCTAssertFalse(manager.containsPreviousPage)
+                            XCTAssertFalse(manager.hasPreviousPage)
 
-                            XCTAssert(manager.containsNextPage)
-
-                            didFetchPreviousPage.fulfill()
+                            XCTAssert(manager.hasNextPage)
 
                             manager.fetch(.next) { result in
-
+                        
+                                defer { didFetchNextPage.fulfill() }
+                                
                                 XCTAssertFalse(manager.isFetching)
                                 
                                 do {
@@ -113,33 +115,25 @@ final class PageManagerTests: XCTestCase {
                                         ]
                                     )
 
-                                    XCTAssertFalse(manager.containsPreviousPage)
+                                    XCTAssertFalse(manager.hasPreviousPage)
 
-                                    XCTAssertFalse(manager.containsNextPage)
+                                    XCTAssertFalse(manager.hasNextPage)
 
-                                    didFetchNextPage.fulfill()
-                                    
                                 }
                                 catch { XCTFail("\(error)") }
 
                             }
-                            
-                            XCTAssert(manager.isFetching)
                             
                         }
                         catch { XCTFail("\(error)") }
 
                     }
                     
-                    XCTAssert(manager.isFetching)
-                    
                 }
                 catch { XCTFail("\(error)") }
             
             }
         )
-        
-        XCTAssert(manager.isFetching)
         
         waitForExpectations(timeout: 10.0)
         
