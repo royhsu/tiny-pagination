@@ -8,10 +8,7 @@ let package = Package(
         .library(name: "TinyPagination", targets: [ "TinyPagination", ]),
     ],
     dependencies: [
-        .package(
-            url: "https://github.com/broadwaylamb/OpenCombine.git",
-            .exact("0.6.0")
-        ),
+        .package(path: "../OpenCombine"),
     ],
     targets: [
         .target(name: "TinyPagination", dependencies: [ "OpenCombine", ]),
