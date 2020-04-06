@@ -1,6 +1,6 @@
 // MARK: - AnyFetchableService
 
-import OpenCombine
+import Combine
 
 public struct AnyFetchableService<Element, Failure>
 where

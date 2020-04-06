@@ -1,7 +1,6 @@
 // MARK: - PageManager
 
-import Foundation
-import OpenCombine
+import Combine
 
 public final class PageManager<Element, Failure>
 where

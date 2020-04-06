@@ -1,20 +1,15 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.2
 
 import PackageDescription
 
 let package = Package(
-    name: "TinyPagination",
-    products: [
-        .library(name: "TinyPagination", targets: [ "TinyPagination", ]),
-    ],
-    dependencies: [
-        .package(path: "../OpenCombine"),
-    ],
-    targets: [
-        .target(name: "TinyPagination", dependencies: [ "OpenCombine", ]),
-        .testTarget(
-            name: "TinyPaginationTests",
-            dependencies: [ "TinyPagination", ]
-        ),
-    ]
+  name: "TinyPagination",
+  platforms: [.iOS(.v13), .macOS(.v10_15), .tvOS(.v13), .watchOS(.v6)],
+  products: [
+    .library(name: "TinyPagination", targets: ["TinyPagination",]),
+  ],
+  targets: [
+    .target(name: "TinyPagination"),
+    .testTarget(name: "TinyPaginationTests", dependencies: ["TinyPagination",]),
+  ]
 )

@@ -1,6 +1,6 @@
 // MARK: - FetchableService
 
-import OpenCombine
+import Combine
 
 public protocol FetchableService {
     
